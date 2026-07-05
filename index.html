@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Fishing Tournament</title>
+<style>
+  :root{
+    --water:#0d5c63; --water-deep:#083c41; --water-light:#e7f2f1;
+    --reed:#c8672a; --reed-deep:#8f4416;
+    --sand:#f6f1e7; --paper:#fffdf8;
+    --ink:#1c2b2b; --ink-soft:#5a6b6a;
+    --line:#d9d2c3; --line-soft:#ece6d8;
+    --gold:#cf9e2f; --silver:#9aa0a2; --bronze:#b5713a;
+    --ok:#1d7a52; --ok-bg:#e4f2ea;
+    --bad:#b23b3b; --bad-bg:#f8e8e6;
+    --radius:14px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    font-family:var(--font); color:var(--ink);
+    background:var(--sand); line-height:1.5;
+    min-height:100vh;
+  }
+  .app{max-width:520px; margin:0 auto; min-height:100vh; background:var(--sand); display:flex; flex-direction:column;}
+
+  /* top bar */
+  .bar{
+    background:var(--water); color:#fff; padding:14px 18px 0;
+    position:sticky; top:0; z-index:20;
+  }
+  .bar h1{
+    font-size:17px; font-weight:600; margin:0 0 12px; letter-spacing:.2px;
+    display:flex; align-items:center; gap:9px;
+  }
+  .bar h1 .fish{font-size:20px;}
+  .tabs{display:flex; gap:2px;}
+  .tab{
+    flex:1; border:none; background:transparent; color:#bcdad9;
+    font-family:var(--font); font-size:13.5px; font-weight:600;
+    padding:11px 4px 12px; cursor:pointer; border-radius:10px 10px 0 0;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    transition:color .15s;
+  }
+  .tab .ic{font-size:18px; line-height:1;}
+  .tab.on{background:var(--sand); color:var(--water);}
+
+  .screen{padding:20px 18px 40px; flex:1;}
+  .screen.hide{display:none;}
+
+  .intro{font-size:13.5px; color:var(--ink-soft); margin:0 0 18px;}
+
+  .card{
+    background:var(--paper); border:1px solid var(--line);
+    border-radius:var(--radius); padding:18px;
+  }
+  .field{margin-bottom:14px;}
+  .field:last-child{margin-bottom:0;}
+  label.lab{display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px;}
+  input[type=text], input[type=number], select{
+    width:100%; font-family:var(--font); font-size:17px; color:var(--ink);
+    padding:12px 13px; border:1.5px solid var(--line); border-radius:11px;
+    background:#fff; -webkit-appearance:none; appearance:none;
+  }
+  input:focus, select:focus{outline:none; border-color:var(--water);}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .hint{font-size:12px; color:var(--ink-soft); margin:6px 0 0; line-height:1.4;}
+
+  .seg{display:flex; gap:8px;}
+  .seg button{
+    flex:1; font-family:var(--font); font-size:15px; font-weight:600;
+    padding:13px 4px; border:1.5px solid var(--line); border-radius:11px;
+    background:#fff; color:var(--ink-soft); cursor:pointer; transition:.12s;
+  }
+  .seg button.on{background:var(--water); border-color:var(--water); color:#fff;}
+
+  .btn{
+    width:100%; font-family:var(--font); font-size:16px; font-weight:700;
+    padding:15px; border-radius:12px; border:none; cursor:pointer;
+    background:var(--reed); color:#fff; letter-spacing:.2px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn:active{transform:scale(.985);}
+  .btn.ghost{background:#fff; color:var(--water); border:1.5px solid var(--line);}
+
+  .msg{font-size:14px; margin-top:14px; min-height:20px; display:flex; align-items:flex-start; gap:7px; font-weight:500;}
+  .msg.ok{color:var(--ok);}
+  .msg.bad{color:var(--bad);}
+  .msg .ic{font-size:16px; line-height:1.4; flex-shrink:0;}
+
+  /* name confirmation pill on the log screen */
+  .who{
+    margin:2px 0 16px; padding:12px 14px; border-radius:11px; font-size:15px;
+    display:flex; align-items:center; gap:10px; min-height:20px;
+  }
+  .who.empty{background:transparent; padding:0; min-height:0;}
+  .who.ok{background:var(--ok-bg); color:var(--ok);}
+  .who.bad{background:var(--bad-bg); color:var(--bad);}
+  .who .nm{font-weight:700;}
+  .who .ag{font-size:12.5px; opacity:.8; font-weight:600;}
+  .who .av{
+    width:34px; height:34px; border-radius:50%; background:var(--water); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0;
+  }
+
+  /* length wheel */
+  .species{display:flex; gap:8px;}
+  .species .sp-btn{
+    flex:1; font-family:var(--font); font-size:14px; font-weight:700;
+    padding:14px 4px; border:1.5px solid var(--line); border-radius:12px;
+    background:#fff; color:var(--ink-soft); cursor:pointer; transition:.12s;
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+  }
+  .species .sp-btn .sp-ic{font-size:22px; line-height:1;}
+  .species .sp-btn.on{background:var(--water); border-color:var(--water); color:#fff;}
+  .species .sp-btn:active{transform:scale(.97);}
+  .wheel{
+    display:flex; align-items:center; justify-content:center; gap:14px;
+    margin:6px 0 20px;
+  }
+  .wheel button{
+    width:66px; height:66px; border-radius:18px; border:1.5px solid var(--line);
+    background:#fff; color:var(--water); font-size:30px; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; line-height:1;
+  }
+  .wheel button:active{transform:scale(.94); background:var(--water-light);}
+  .wheel .val{
+    min-width:130px; text-align:center;
+  }
+  .wheel .val .num{font-size:44px; font-weight:800; letter-spacing:-1px; color:var(--ink); line-height:1; display:flex; align-items:baseline; justify-content:center; gap:4px;}
+  .wheel .val .num .whole{font-size:44px;}
+  .wheel .val .num .frac{font-size:22px; font-weight:700; color:var(--water);}
+  .wheel .val .un{font-size:13px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:1px;}
+
+  /* roster list */
+  .tbl{width:100%; border-collapse:collapse; font-size:14.5px; margin-top:14px;}
+  .tbl th{
+    text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--ink-soft); padding:0 0 8px; border-bottom:1.5px solid var(--line);
+  }
+  .tbl td{padding:10px 0; border-bottom:1px solid var(--line-soft);}
+  .tbl td.band{font-weight:700; width:52px;}
+  .tbl td.grp{color:var(--ink-soft); text-align:right; font-size:12.5px; font-weight:600;}
+  .count{font-size:12.5px; color:var(--ink-soft); font-weight:600; margin:20px 0 0;}
+
+  /* leaderboard */
+  .lb-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
+  .lb-head .live{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700;
+    color:var(--ok); text-transform:uppercase; letter-spacing:.5px;
+  }
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--ok); animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.3;}}
+  .grp-title{
+    font-size:15px; font-weight:800; color:var(--water); margin:22px 0 10px;
+    display:flex; align-items:center; gap:8px; text-transform:uppercase; letter-spacing:.5px;
+  }
+  .grp-title:first-of-type{margin-top:8px;}
+  .podium{
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 16px; margin-bottom:12px;
+  }
+  .podium h3{
+    font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--ink-soft); margin:0 0 10px;
+  }
+  .rank{display:flex; align-items:center; gap:11px; padding:7px 0;}
+  .rank + .rank{border-top:1px solid var(--line-soft);}
+  .medal{
+    width:26px; height:26px; border-radius:50%; color:#fff; font-size:13px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .m1{background:var(--gold);} .m2{background:var(--silver);} .m3{background:var(--bronze);}
+  .rank .who-n{flex:1; font-weight:600; font-size:15px;}
+  .rank .bandtag{
+    font-size:12px; font-weight:700; color:var(--water); background:var(--water-light);
+    padding:2px 7px; border-radius:6px; flex-shrink:0;
+  }
+  .rank .ln{font-weight:800; font-size:16px;}
+  .rank .tm{font-size:11.5px; color:var(--ink-soft); width:66px; text-align:right;}
+  .empty-note{font-size:13.5px; color:var(--ink-soft); font-style:italic;}
+
+  .demo-tag{
+    text-align:center; font-size:11.5px; color:var(--ink-soft); padding:14px 18px 26px;
+  }
+  .demo-tag b{color:var(--reed-deep);}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="bar">
+    <h1><span class="fish">&#128031;</span> River Kids Tournament</h1>
+    <div class="tabs">
+      <button class="tab on" data-s="checkin" onclick="go('checkin')"><span class="ic">&#9998;</span>Check-in</button>
+      <button class="tab" data-s="log" onclick="go('log')"><span class="ic">&#127907;</span>Log a fish</button>
+      <button class="tab" data-s="board" onclick="go('board')"><span class="ic">&#127942;</span>Results</button>
+    </div>
+  </div>
+
+  <!-- CHECK-IN -->
+  <div class="screen" id="s-checkin">
+    <p class="intro">Front desk. Give each child a wristband and enter them here. A wristband number can only be used once.</p>
+    <div class="card">
+      <div class="field">
+        <label class="lab" for="c-band">Wristband number</label>
+        <input id="c-band" type="number" inputmode="numeric" placeholder="e.g. 106">
+        <p class="hint">Fills in the next number automatically &mdash; change it if the band on the wrist is different.</p>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label class="lab" for="c-first">First name</label>
+          <input id="c-first" type="text" placeholder="">
+        </div>
+        <div class="field">
+          <label class="lab" for="c-last">Last name</label>
+          <input id="c-last" type="text" placeholder="">
+        </div>
+      </div>
+      <div class="field">
+        <label class="lab">Age group</label>
+        <div class="seg" id="c-ag">
+          <button class="on" data-ag="5–11" onclick="pickAg(this)">Ages 5–11</button>
+          <button data-ag="12–16" onclick="pickAg(this)">Ages 12–16</button>
+        </div>
+      </div>
+      <button class="btn" onclick="addKid()"><span>&#10003;</span> Check in child</button>
+      <div class="msg" id="c-msg"></div>
+    </div>
+    <p class="count" id="c-count"></p>
+    <table class="tbl" id="c-tbl" style="display:none;">
+      <thead><tr><th>#</th><th>Name</th><th style="text-align:right;">Group</th></tr></thead>
+      <tbody id="c-body"></tbody>
+    </table>
+  </div>
+
+  <!-- LOG A FISH -->
+  <div class="screen hide" id="s-log">
+    <p class="intro">Station screen. Enter the wristband, check the name matches the child, set the length, and submit.</p>
+    <div class="card">
+      <div class="field">
+        <label class="lab" for="l-band">Wristband number</label>
+        <input id="l-band" type="number" inputmode="numeric" placeholder="101" oninput="lookup()">
+      </div>
+      <div class="who empty" id="l-who"></div>
+      <div class="field">
+        <label class="lab">Species</label>
+        <div class="species" id="l-sp-btns">
+          <button type="button" class="sp-btn on" data-sp="Bass" onclick="pickSp(this)"><span class="sp-ic">&#128031;</span>Bass</button>
+          <button type="button" class="sp-btn" data-sp="Sunfish" onclick="pickSp(this)"><span class="sp-ic">&#128032;</span>Sunfish</button>
+          <button type="button" class="sp-btn" data-sp="Catfish" onclick="pickSp(this)"><span class="sp-ic">&#128033;</span>Catfish</button>
+        </div>
+      </div>
+      <label class="lab" style="margin-bottom:2px;">Length</label>
+      <div class="wheel">
+        <button onclick="bump(-1)" aria-label="Decrease">&minus;</button>
+        <div class="val"><div class="num" id="l-num">12.5</div><div class="un">inches</div></div>
+        <button onclick="bump(1)" aria-label="Increase">+</button>
+      </div>
+      <button class="btn" onclick="logFish()"><span>&#127907;</span> Submit catch</button>
+      <div class="msg" id="l-msg"></div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="screen hide" id="s-board">
+    <div class="lb-head">
+      <p class="intro" style="margin:0;">Live standings &mdash; top 3 in each species and age group.</p>
+      <span class="live"><span class="dot"></span>Live</span>
+    </div>
+    <div id="board-body"></div>
+  </div>
+
+  <div class="demo-tag">
+    <b>Prototype</b> &mdash; data is stored on this device only. The real version saves every entry to the charity's Google Sheet.
+  </div>
+</div>
+
+<script>
+  var SPECIES = ["Bass","Sunfish","Catfish"];
+  var GROUPS = ["5–11","12–16"];
+
+  // seed roster + catches so the leaderboard isn't empty on first open
+  var roster = {
+    101:{first:"Ava",last:"Martin",ag:"5–11"},
+    102:{first:"Liam",last:"Kelly",ag:"12–16"},
+    103:{first:"Noah",last:"Reyes",ag:"5–11"},
+    104:{first:"Mia",last:"Turner",ag:"12–16"},
+    105:{first:"Ethan",last:"Park",ag:"5–11"}
+  };
+  var clock = 9*3600 + 15*60;
+  function tick(){ clock += 90 + Math.floor(Math.random()*240); return clock; }
+  function stampOf(sec){
+    var h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+    var ap = h>=12?"PM":"AM"; var hh = h%12; if(hh===0) hh=12;
+    return hh+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")+" "+ap;
+  }
+  var catches = [
+    [101,"Bass",14.5],[102,"Bass",16.0],[103,"Sunfish",7.5],
+    [104,"Catfish",19.0],[105,"Bass",12.0],[101,"Bass",14.5],
+    [104,"Bass",17.25],[102,"Catfish",22.5]
+  ].map(function(c){ var t=tick(); return {band:c[0],sp:c[1],len:c[2],ts:t,tm:stampOf(t)}; });
+
+  function go(name){
+    ["checkin","log","board"].forEach(function(n){
+      document.getElementById("s-"+n).classList.toggle("hide", n!==name);
+    });
+    document.querySelectorAll(".tab").forEach(function(t){
+      t.classList.toggle("on", t.dataset.s===name);
+    });
+    if(name==="board") renderBoard();
+    if(name==="checkin") renderRoster();
+  }
+
+  function fmtLen(v){
+    var s = v.toFixed(3).replace(/0+$/,"").replace(/\.$/,"");
+    return s;
+  }
+  /* ruler-style display: whole inches + eighths fraction, e.g. 6 3/8 */
+  var FRAC = {0.125:"1/8",0.25:"1/4",0.375:"3/8",0.5:"1/2",0.625:"5/8",0.75:"3/4",0.875:"7/8"};
+  function rulerText(v){
+    var whole = Math.floor(v + 1e-6);
+    var frac = Math.round((v - whole) * 1000) / 1000;
+    var fLabel = FRAC[frac];
+    return fLabel ? (whole + " " + fLabel) : String(whole);
+  }
+  function rulerHTML(v){
+    var whole = Math.floor(v + 1e-6);
+    var frac = Math.round((v - whole) * 1000) / 1000;
+    var fLabel = FRAC[frac];
+    var numHTML = '<span class="whole">' + whole + '</span>';
+    if(fLabel){ numHTML += '<span class="frac">' + fLabel + '</span>'; }
+    return numHTML;
+  }
+  function initials(f,l){ return (f[0]||"").toUpperCase()+(l[0]||"").toUpperCase(); }
+
+  /* ---- check-in ---- */
+  var selAg = "5–11";
+  function pickAg(btn){
+    selAg = btn.dataset.ag;
+    document.querySelectorAll("#c-ag button").forEach(function(b){ b.classList.toggle("on", b===btn); });
+  }
+  function setMsg(id, kind, ic, text){
+    var el = document.getElementById(id);
+    el.className = "msg "+kind;
+    el.innerHTML = '<span class="ic">'+ic+'</span><span>'+text+'</span>';
+  }
+  function addKid(){
+    var band = normBand(document.getElementById("c-band").value);
+    var first = document.getElementById("c-first").value.trim();
+    var last = document.getElementById("c-last").value.trim();
+    if(!band || !first || !last){
+      setMsg("c-msg","bad","&#9888;","Wristband, first name, and last name are all required.");
+      return;
+    }
+    if(roster[band]){
+      var e = roster[band];
+      setMsg("c-msg","bad","&#128683;","Wristband "+band+" already belongs to "+e.first+" "+e.last+". Choose a different number.");
+      return;
+    }
+    roster[band] = {first:first, last:last, ag:selAg};
+    setMsg("c-msg","ok","&#10003;",first+" "+last+" checked in on wristband "+band+" ("+selAg+").");
+    document.getElementById("c-first").value="";
+    document.getElementById("c-last").value="";
+    fillNextBand();
+    document.getElementById("c-first").focus();
+    renderRoster();
+  }
+  var START_BAND = 101;
+  function nextBand(){
+    var used = Object.keys(roster).map(Number);
+    var n = START_BAND;
+    while(used.indexOf(n) !== -1) n++;
+    return n;
+  }
+  function fillNextBand(){
+    document.getElementById("c-band").value = nextBand();
+  }
+  function renderRoster(){
+    var bands = Object.keys(roster).sort(function(a,b){return a-b;});
+    document.getElementById("c-count").textContent = bands.length+" children checked in";
+    var tbl = document.getElementById("c-tbl");
+    var body = document.getElementById("c-body");
+    if(!bands.length){ tbl.style.display="none"; return; }
+    tbl.style.display="table";
+    body.innerHTML = bands.map(function(b){
+      var e = roster[b];
+      return '<tr><td class="band">'+b+'</td><td>'+e.first+' '+e.last+'</td><td class="grp">'+e.ag+'</td></tr>';
+    }).join("");
+  }
+
+  /* ---- log a fish ---- */
+  /* length uses 1/8" steps up to 10", then 1/4" steps above 10" */
+  var len = 4;
+  function stepAt(v){ return v < 10 ? 0.125 : 0.25; }
+  function renderLen(){ document.getElementById("l-num").innerHTML = rulerHTML(len); }
+  function bump(d){
+    if(d > 0){
+      len = len + stepAt(len);
+    } else {
+      // stepping down: use the increment appropriate to where we're landing
+      var s = stepAt(len - 0.001);
+      len = len - s;
+    }
+    // snap to a clean multiple of the active step to avoid float drift
+    var s2 = stepAt(len);
+    len = Math.round(len / s2) * s2;
+    if(len < 0) len = 0;
+    len = Math.round(len * 1000) / 1000;
+    renderLen();
+  }
+  function normBand(raw){
+    var n = parseInt(raw, 10);
+    return isNaN(n) ? "" : String(n);
+  }
+  function lookup(){
+    var band = normBand(document.getElementById("l-band").value);
+    var who = document.getElementById("l-who");
+    if(!band){ who.className="who empty"; who.innerHTML=""; return; }
+    var e = roster[band];
+    if(e){
+      who.className="who ok";
+      who.innerHTML = '<span class="av">'+initials(e.first,e.last)+'</span>'+
+        '<span><span class="nm">'+e.first+' '+e.last+'</span> &nbsp;<span class="ag">'+e.ag+'</span></span>';
+    } else {
+      who.className="who bad";
+      who.innerHTML = '<span>&#9888;</span><span>No child checked in on wristband '+band+'. Double-check the band.</span>';
+    }
+  }
+  var selSp = "Bass";
+  function pickSp(btn){
+    selSp = btn.dataset.sp;
+    document.querySelectorAll("#l-sp-btns .sp-btn").forEach(function(b){ b.classList.toggle("on", b===btn); });
+  }
+  function logFish(){
+    var band = normBand(document.getElementById("l-band").value);
+    var sp = selSp;
+    var e = roster[band];
+    if(!band || !e){
+      setMsg("l-msg","bad","&#9888;","Enter a valid wristband number before submitting.");
+      return;
+    }
+    var t = tick();
+    catches.push({band:parseInt(band,10), sp:sp, len:len, ts:t, tm:stampOf(t)});
+    setMsg("l-msg","ok","&#10003;","Logged "+rulerText(len)+'" '+sp+" for "+e.first+" "+e.last+". Same child? Just set the next fish. Different child? Change the band.");
+    len = 4; renderLen();
+    selSp = "Bass";
+    document.querySelectorAll("#l-sp-btns .sp-btn").forEach(function(b){ b.classList.toggle("on", b.dataset.sp==="Bass"); });
+  }
+
+  /* ---- leaderboard ---- */
+  function renderBoard(){
+    var buckets = {};
+    GROUPS.forEach(function(g){ SPECIES.forEach(function(sp){ buckets[g+"|"+sp]=[]; }); });
+    catches.forEach(function(c){
+      var e = roster[c.band]; if(!e) return;
+      buckets[e.ag+"|"+c.sp].push(c);
+    });
+    var html = "";
+    GROUPS.forEach(function(g){
+      html += '<div class="grp-title"><span>&#128100;</span>Ages '+g+'</div>';
+      SPECIES.forEach(function(sp){
+        var rows = buckets[g+"|"+sp].slice().sort(function(a,b){
+          return b.len - a.len || a.ts - b.ts;
+        }).slice(0,3);
+        html += '<div class="podium"><h3>'+sp+'</h3>';
+        if(!rows.length){
+          html += '<div class="empty-note">No catches logged yet.</div>';
+        } else {
+          rows.forEach(function(r,i){
+            var e = roster[r.band];
+            html += '<div class="rank">'+
+              '<span class="medal m'+(i+1)+'">'+(i+1)+'</span>'+
+              '<span class="bandtag">#'+r.band+'</span>'+
+              '<span class="who-n">'+e.first+' '+e.last+'</span>'+
+              '<span class="ln">'+rulerText(r.len)+'"</span>'+
+              '<span class="tm">'+r.tm+'</span></div>';
+          });
+        }
+        html += '</div>';
+      });
+    });
+    document.getElementById("board-body").innerHTML = html;
+  }
+
+  renderLen();
+  renderRoster();
+  fillNextBand();
+</script>
+</body>
+</html>
